@@ -9,13 +9,17 @@ import (
 
 // NewRouter ...
 func NewRouter() *Router {
-	return &Router{routes: map[string]map[string]http.HandlerFunc{}}
+	return &Router{
+		routes:   map[string]map[string]http.HandlerFunc{},
+		notfound: http.NotFound,
+	}
 }
 
 // Router ...
 type Router struct {
-	static static
-	routes map[string]map[string]http.HandlerFunc
+	static   *static
+	routes   map[string]map[string]http.HandlerFunc
+	notfound http.HandlerFunc
 }
 
 type static struct {
@@ -24,18 +28,18 @@ type static struct {
 }
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, router.static.Path) {
+	if router.static != nil && strings.HasPrefix(r.URL.Path, router.static.Path) {
 		router.static.Server.ServeHTTP(w, r)
 		return
 	}
 	methodes, ok := router.routes[r.Method]
 	if !ok {
-		http.NotFound(w, r)
+		router.notfound(w, r)
 		return
 	}
 	handler, ok := methodes[r.URL.Path]
 	if !ok {
-		http.NotFound(w, r)
+		router.notfound(w, r)
 		return
 	}
 	handler.ServeHTTP(w, r)
@@ -63,10 +67,16 @@ func (router *Router) POST(path string, handler http.HandlerFunc) *Router {
 	return router.add("POST", path, handler)
 }
 
+// NotFound ...
+func (router *Router) NotFound(handler http.HandlerFunc) *Router {
+	router.notfound = handler
+	return router
+}
+
 // Static ...
 func (router *Router) Static(path string, dir string) *Router {
 	fs := http.FileServer(http.Dir(dir))
-	router.static = static{
+	router.static = &static{
 		Path:   path,
 		Server: http.StripPrefix(path, fs),
 	}
