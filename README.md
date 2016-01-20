@@ -9,7 +9,7 @@ func main() {
 	r := marmoset.NewRouter()
 
 	r.GET("/foo", your.FooHttpHandlerFunc)
-	r.Post("/bar", your.BarHttpHandlerFunc)
+	r.POST("/bar", your.BarHttpHandlerFunc)
 
 	r.Static("/public", "/your/assets/path")
 
