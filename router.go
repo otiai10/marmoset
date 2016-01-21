@@ -4,6 +4,8 @@ package marmoset
 import (
 	"log"
 	"net/http"
+	"path"
+	"runtime"
 	"strings"
 )
 
@@ -74,11 +76,17 @@ func (router *Router) NotFound(handler http.HandlerFunc) *Router {
 }
 
 // Static ...
-func (router *Router) Static(path string, dir string) *Router {
+func (router *Router) Static(p string, dir string) *Router {
 	fs := http.FileServer(http.Dir(dir))
 	router.static = &static{
-		Path:   path,
-		Server: http.StripPrefix(path, fs),
+		Path:   p,
+		Server: http.StripPrefix(p, fs),
 	}
 	return router
+}
+
+// StaticRelative ...
+func (router *Router) StaticRelative(p string, relativeDir string) *Router {
+	_, f, _, _ := runtime.Caller(1)
+	return router.Static(p, path.Join(path.Dir(f), relativeDir))
 }

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/css/materialize.min.css">
+  <link rel="stylesheet" href="/public/index.css">
+  <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>marmoset sample page</title>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col s12">
+        <h1>"marmoset" <a href="https://github.com/otiai10/marmoset"><i class="fa fa-github"></i></a></h1>
+        <p class="caption">Less than "web framework", just make your code a bit DRY. This is sample page using marmoset.</p>
+        <pre>message: {{.message}}</pre>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col s12">
+        <pre class="prettyprint lang-go" lang="language-go">
+package main
+
+import (
+	"net/http"
+
+	"github.com/otiai10/marmoset"
+)
+
+func main() {
+
+
+	r := marmoset.NewRouter()
+
+	marmoset.LoadViews("./")
+	// use "*.html" in "./", can be accessed by file name
+
+	r.StaticRelative("/public", "./")
+	// use "./" for static with request "/public"
+
+	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
+		marmoset.Render(w).HTML("index", map[string]interface{}{
+			"message": "Hello, this is pygmy marmoset!",
+		})
+	})
+	r.GET("/api", func(w http.ResponseWriter, r *http.Request) {
+		marmoset.Render(w).JSON(http.StatusOK, map[string]interface{}{
+			"message": "Hello, this is pygmy marmoset API!",
+		})
+	})
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		marmoset.RenderJSON(w, http.StatusNotFound, map[string]interface{}{
+			"message": "not found :(",
+		})
+	})
+
+	http.ListenAndServe(":8080", r)
+}
+        </pre>
+        <a href="https://godoc.org/github.com/otiai10/marmoset"><img src="https://godoc.org/github.com/otiai10/marmoset?status.svg" alt="GoDoc"></a>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col s12">
+        <p class="caption">MIT Licence</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
