@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/otiai10/marmoset"
 )
@@ -30,5 +31,5 @@ func main() {
 
 	r.StaticRelative("/public", "./")
 
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":"+os.Getenv("PORT"), r)
 }
