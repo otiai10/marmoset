@@ -15,6 +15,6 @@ func main() {
 
 	s := marmoset.NewFilter(r).Add(&your.Filter{}).Server()
 
-	http.ListenAndServe(":8080", server)
+	http.ListenAndServe(":8080", s)
 }
 ```
