@@ -1,15 +1,14 @@
-package main
+package example
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/otiai10/marmoset"
 )
 
-func main() {
+func init() {
 
-	marmoset.LoadViews("./")
+	marmoset.LoadViews("./views")
 
 	r := marmoset.NewRouter()
 
@@ -29,7 +28,9 @@ func main() {
 		})
 	})
 
-	r.StaticRelative("/public", "./")
+	r.StaticRelative("/public", "./assets")
 
-	http.ListenAndServe(":"+os.Getenv("PORT"), r)
+	http.Handle("/", r)
+	// ListenAndServe will be invoked by GAE SDK.
+	// http.ListenAndServe(":"+os.Getenv("PORT"), r)
 }
