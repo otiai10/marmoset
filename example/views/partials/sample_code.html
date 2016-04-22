@@ -1,0 +1,39 @@
+{{define "samplecode"}}
+package main
+
+import (
+	"net/http"
+
+	"github.com/otiai10/marmoset"
+)
+
+func main() {
+
+
+	r := marmoset.NewRouter()
+
+	marmoset.LoadViews("./")
+	// use "*.html" in "./", can be accessed by file name
+
+	r.StaticRelative("/public", "./")
+	// use "./" for static with request "/public"
+
+	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
+		marmoset.Render(w).HTML("index", map[string]interface{}{
+			"message": "Hello, this is pygmy marmoset!",
+		})
+	})
+	r.GET("/api", func(w http.ResponseWriter, r *http.Request) {
+		marmoset.Render(w).JSON(http.StatusOK, map[string]interface{}{
+			"message": "Hello, this is pygmy marmoset API!",
+		})
+	})
+	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		marmoset.RenderJSON(w, http.StatusNotFound, map[string]interface{}{
+			"message": "not found :(",
+		})
+	})
+
+	http.ListenAndServe(":8080", r)
+}
+{{end}}

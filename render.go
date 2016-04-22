@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
+	"regexp"
 	"runtime"
 )
 
@@ -64,7 +67,16 @@ func (r PrettyRenderer) HTML(name string, data interface{}) error {
 // LoadViews ...
 func LoadViews(p string) error {
 	_, f, _, _ := runtime.Caller(1)
-	tpl, err := template.ParseGlob(path.Join(path.Dir(f), p, "*.html"))
+	viewpath := path.Join(path.Dir(f), p) + "/"
+	exp := regexp.MustCompile("[^/]+\\.html$")
+	htmlfiles := []string{}
+	filepath.Walk(viewpath, func(fullpath string, info os.FileInfo, err error) error {
+		if exp.MatchString(fullpath) {
+			htmlfiles = append(htmlfiles, fullpath)
+		}
+		return nil
+	})
+	tpl, err := template.ParseFiles(htmlfiles...)
 	if err != nil {
 		panic(err)
 	}
