@@ -1,22 +1,21 @@
 {{template "header"}}
-  <div class="container">
-    <div class="row">
-      <div class="col s12">
-        <h1>"marmoset" <a href="https://github.com/otiai10/marmoset"><i class="fa fa-github"></i></a></h1>
-        <p class="caption">Less than "web framework", just make your code a bit DRY. This is sample page using marmoset.</p>
-        <pre>message: {{.message}}</pre>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col s12">
-        <pre class="prettyprint lang-go" lang="language-go">{{template "samplecode"}}</pre>
-        <a href="https://godoc.org/github.com/otiai10/marmoset"><img src="https://godoc.org/github.com/otiai10/marmoset?status.svg" alt="GoDoc"></a>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col s12">
-        <p class="caption">MIT Licence</p>
-      </div>
+<div class="container">
+  <div class="row">
+    <div class="col s12">
+      <h1>"marmoset" <a href="https://github.com/otiai10/marmoset"><i class="fa fa-github"></i></a></h1>
+      <p class="caption">Less than "web framework", just make your code a bit DRY. This is sample page using marmoset.</p>
     </div>
   </div>
+  <div class="row">
+    <div class="col s12">
+      <pre class="prettyprint lang-go" lang="language-go">{{template "partials/sample_code"}}</pre>
+      <a href="https://godoc.org/github.com/otiai10/marmoset"><img src="https://godoc.org/github.com/otiai10/marmoset?status.svg" alt="GoDoc"></a>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col s12">
+      <p class="caption">MIT Licence</p>
+    </div>
+  </div>
+</div>
 {{template "footer"}}

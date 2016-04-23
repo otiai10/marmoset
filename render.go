@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"strings"
 )
 
 // Renderer ...
@@ -61,7 +62,7 @@ func (r PrettyRenderer) HTML(name string, data interface{}) error {
 	if templates == nil {
 		return fmt.Errorf("templates not loaded")
 	}
-	return templates.ExecuteTemplate(r.w, name+".html", data)
+	return templates.Lookup(name).Execute(r.w, data)
 }
 
 // LoadViews ...
@@ -69,17 +70,24 @@ func LoadViews(p string) error {
 	_, f, _, _ := runtime.Caller(1)
 	viewpath := path.Join(path.Dir(f), p) + "/"
 	exp := regexp.MustCompile("[^/]+\\.html$")
-	htmlfiles := []string{}
+
+	pool := template.New("")
+
 	filepath.Walk(viewpath, func(fullpath string, info os.FileInfo, err error) error {
 		if exp.MatchString(fullpath) {
-			htmlfiles = append(htmlfiles, fullpath)
+			name := strings.Replace(strings.Replace(fullpath, viewpath, "", -1), filepath.Ext(fullpath), "", -1)
+			tmp, err := template.ParseFiles(fullpath)
+			if err != nil {
+				panic(err)
+			}
+			if _, err = pool.AddParseTree(name, tmp.Tree); err != nil {
+				panic(err)
+			}
 		}
 		return nil
 	})
-	tpl, err := template.ParseFiles(htmlfiles...)
-	if err != nil {
-		panic(err)
-	}
-	templates = tpl
+
+	templates = pool
+
 	return nil
 }

@@ -3,27 +3,26 @@ package example
 import (
 	"net/http"
 
-	"github.com/otiai10/marmoset"
+	m "github.com/otiai10/marmoset"
 )
 
 func init() {
 
-	marmoset.LoadViews("./views")
+	m.LoadViews("./views")
 
-	r := marmoset.NewRouter()
+	r := m.NewRouter()
 
 	r.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		marmoset.Render(w).HTML("index", map[string]interface{}{
-			"message": "Hello, this is pygmy marmoset!",
-		})
+		m.Render(w).HTML("index", nil)
 	})
 	r.GET("/api", func(w http.ResponseWriter, r *http.Request) {
-		marmoset.Render(w).JSON(http.StatusOK, map[string]interface{}{
-			"message": "Hello, this is pygmy marmoset API!",
+		m.Render(w).JSON(http.StatusOK, map[string]interface{}{
+			"message":     "Hello, this is pygmy marmoset API!",
+			"remote_addr": r.RemoteAddr,
 		})
 	})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		marmoset.RenderJSON(w, http.StatusNotFound, map[string]interface{}{
+		m.RenderJSON(w, http.StatusNotFound, map[string]interface{}{
 			"message": "not found :(",
 		})
 	})
