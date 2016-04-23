@@ -106,8 +106,15 @@ func isRegexpPath(path string) (bool, *regexp.Regexp) {
 		return false, nil
 	}
 	pathParameterExpression := regexp.MustCompile("\\(\\?P\\<[^>]+\\>[^)]+\\)")
-	for _, part := range strings.Split(path, "/") {
+
+	all := strings.Split(path, "/")
+	for i, part := range all {
 		if pathParameterExpression.MatchString(part) {
+			// If the expression is the last part of URL path,
+			// The end expression should be appended in Regexp.
+			if i == len(all)-1 {
+				compiled = regexp.MustCompile(compiled.String() + "$")
+			}
 			return true, compiled
 		}
 	}
