@@ -4,7 +4,9 @@ package marmoset
 import (
 	"log"
 	"net/http"
+	"net/url"
 	"path"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -13,6 +15,7 @@ import (
 func NewRouter() *Router {
 	return &Router{
 		routes:   map[string]map[string]http.HandlerFunc{},
+		regexps:  map[string]map[*regexp.Regexp]http.HandlerFunc{},
 		notfound: http.NotFound,
 	}
 }
@@ -21,6 +24,7 @@ func NewRouter() *Router {
 type Router struct {
 	static   *static
 	routes   map[string]map[string]http.HandlerFunc
+	regexps  map[string]map[*regexp.Regexp]http.HandlerFunc
 	notfound http.HandlerFunc
 }
 
@@ -34,21 +38,57 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		router.static.Server.ServeHTTP(w, r)
 		return
 	}
-	methodes, ok := router.routes[r.Method]
-	if !ok {
+
+	handler := router.findHandler(r)
+	if handler == nil {
 		router.notfound(w, r)
 		return
 	}
-	handler, ok := methodes[r.URL.Path]
-	if !ok {
-		router.notfound(w, r)
-		return
-	}
+
 	handler.ServeHTTP(w, r)
+	//
+	// methodes, ok := router.routes[r.Method]
+	// if !ok {
+	// 	router.notfound(w, r)
+	// 	return
+	// }
+	// handler, ok := methodes[r.URL.Path]
+	// if !ok {
+	// 	router.notfound(w, r)
+	// 	return
+	// }
+	// handler.ServeHTTP(w, r)
+}
+
+// findHandler ...
+func (router *Router) findHandler(r *http.Request) http.HandlerFunc {
+	if methodes, ok := router.routes[r.Method]; ok {
+		if handler, ok := methodes[r.URL.Path]; ok {
+			return handler
+		}
+	}
+	if methods, ok := router.regexps[r.Method]; ok {
+		for exp, handler := range methods {
+			if exp.MatchString(r.URL.Path) {
+				matched := exp.FindAllStringSubmatch(r.URL.Path, -1)
+				if r.Form == nil {
+					r.Form = url.Values{}
+				}
+				for i, name := range exp.SubexpNames() {
+					r.Form.Add(name, matched[0][i])
+				}
+				return handler
+			}
+		}
+	}
+	return nil
 }
 
 // add ...
 func (router *Router) add(method string, path string, handler http.HandlerFunc) *Router {
+	if ok, compiled := isRegexpPath(path); ok {
+		return router.addRegexpRoute(method, path, compiled, handler)
+	}
 	if _, ok := router.routes[method]; !ok {
 		router.routes[method] = map[string]http.HandlerFunc{}
 	}
@@ -56,6 +96,30 @@ func (router *Router) add(method string, path string, handler http.HandlerFunc) 
 		log.Fatalf("route duplicated on `%s %s`", method, path)
 	}
 	router.routes[method][path] = handler
+	return router
+}
+
+// isRegexpPath ...
+func isRegexpPath(path string) (bool, *regexp.Regexp) {
+	compiled, err := regexp.Compile(path)
+	if err != nil || compiled == nil {
+		return false, nil
+	}
+	pathParameterExpression := regexp.MustCompile("\\(\\?P\\<[^>]+\\>[^)]+\\)")
+	for _, part := range strings.Split(path, "/") {
+		if pathParameterExpression.MatchString(part) {
+			return true, compiled
+		}
+	}
+	return false, nil
+}
+
+// addRegexpRoute ...
+func (router *Router) addRegexpRoute(method, path string, pathCompiled *regexp.Regexp, handler http.HandlerFunc) *Router {
+	if _, ok := router.regexps[method]; !ok {
+		router.regexps[method] = map[*regexp.Regexp]http.HandlerFunc{}
+	}
+	router.regexps[method][pathCompiled] = handler
 	return router
 }
 
