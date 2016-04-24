@@ -33,49 +33,37 @@ type static struct {
 	Server http.Handler
 }
 
-func (router *Router) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if router.static != nil && strings.HasPrefix(r.URL.Path, router.static.Path) {
-		router.static.Server.ServeHTTP(w, r)
+func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if router.static != nil && strings.HasPrefix(req.URL.Path, router.static.Path) {
+		router.static.Server.ServeHTTP(w, req)
 		return
 	}
 
-	handler := router.findHandler(r)
+	handler := router.findHandler(req)
 	if handler == nil {
-		router.notfound(w, r)
+		router.notfound(w, req)
 		return
 	}
 
-	handler.ServeHTTP(w, r)
-	//
-	// methodes, ok := router.routes[r.Method]
-	// if !ok {
-	// 	router.notfound(w, r)
-	// 	return
-	// }
-	// handler, ok := methodes[r.URL.Path]
-	// if !ok {
-	// 	router.notfound(w, r)
-	// 	return
-	// }
-	// handler.ServeHTTP(w, r)
+	handler.ServeHTTP(w, req)
 }
 
 // findHandler ...
-func (router *Router) findHandler(r *http.Request) http.HandlerFunc {
-	if methodes, ok := router.routes[r.Method]; ok {
-		if handler, ok := methodes[r.URL.Path]; ok {
+func (router *Router) findHandler(req *http.Request) http.HandlerFunc {
+	if methodes, ok := router.routes[req.Method]; ok {
+		if handler, ok := methodes[req.URL.Path]; ok {
 			return handler
 		}
 	}
-	if methods, ok := router.regexps[r.Method]; ok {
+	if methods, ok := router.regexps[req.Method]; ok {
 		for exp, handler := range methods {
-			if exp.MatchString(r.URL.Path) {
-				matched := exp.FindAllStringSubmatch(r.URL.Path, -1)
-				if r.Form == nil {
-					r.Form = url.Values{}
+			if exp.MatchString(req.URL.Path) {
+				matched := exp.FindAllStringSubmatch(req.URL.Path, -1)
+				if req.Form == nil {
+					req.Form = url.Values{}
 				}
 				for i, name := range exp.SubexpNames() {
-					r.Form.Add(name, matched[0][i])
+					req.Form.Add(name, matched[0][i])
 				}
 				return handler
 			}
@@ -147,7 +135,7 @@ func (router *Router) NotFound(handler http.HandlerFunc) *Router {
 }
 
 // Static ...
-func (router *Router) Static(p string, dir string) *Router {
+func (router *Router) Static(p, dir string) *Router {
 	fs := http.FileServer(http.Dir(dir))
 	router.static = &static{
 		Path:   p,
