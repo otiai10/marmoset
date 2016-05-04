@@ -62,6 +62,7 @@ func (r PrettyRenderer) HTML(name string, data interface{}) error {
 	if templates == nil {
 		return fmt.Errorf("templates not loaded")
 	}
+	r.w.Header().Add("Content-Type", "text/html")
 	return templates.Lookup(name).Execute(r.w, data)
 }
 
