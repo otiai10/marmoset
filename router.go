@@ -136,7 +136,8 @@ func (router *Router) NotFound(handler http.HandlerFunc) *Router {
 
 // Static ...
 func (router *Router) Static(p, dir string) *Router {
-	fs := http.FileServer(http.Dir(dir))
+	_, f, _, _ := runtime.Caller(1)
+	fs := http.FileServer(http.Dir(path.Join(path.Dir(f), dir)))
 	router.static = &static{
 		Path:   p,
 		Server: http.StripPrefix(p, fs),
