@@ -12,6 +12,10 @@ import (
 
 var templates *template.Template
 
+// P is just a short hand of `map[string]interface{}`
+// I don't want to write `map[string]interface{}` so repeatedly... :(
+type P map[string]interface{}
+
 // LoadViews ...
 func LoadViews(p string) *template.Template {
 	_, f, _, _ := runtime.Caller(1)
