@@ -3,14 +3,7 @@ package marmoset
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"net/http"
-	"os"
-	"path"
-	"path/filepath"
-	"regexp"
-	"runtime"
-	"strings"
 )
 
 // Renderer ...
@@ -18,8 +11,6 @@ type Renderer interface {
 	JSON(int, interface{}) error
 	HTML(string, interface{}) error
 }
-
-var templates *template.Template
 
 // Render ...
 func Render(w http.ResponseWriter, pretty ...bool) Renderer {
@@ -64,31 +55,4 @@ func (r PrettyRenderer) HTML(name string, data interface{}) error {
 	}
 	r.w.Header().Add("Content-Type", "text/html")
 	return templates.Lookup(name).Execute(r.w, data)
-}
-
-// LoadViews ...
-func LoadViews(p string) error {
-	_, f, _, _ := runtime.Caller(1)
-	viewpath := path.Join(path.Dir(f), p) + "/"
-	exp := regexp.MustCompile("[^/]+\\.html$")
-
-	pool := template.New("")
-
-	filepath.Walk(viewpath, func(fullpath string, info os.FileInfo, err error) error {
-		if exp.MatchString(fullpath) {
-			name := strings.Replace(strings.Replace(fullpath, viewpath, "", -1), filepath.Ext(fullpath), "", -1)
-			tmp, err := template.ParseFiles(fullpath)
-			if err != nil {
-				panic(err)
-			}
-			if _, err = pool.AddParseTree(name, tmp.Tree); err != nil {
-				panic(err)
-			}
-		}
-		return nil
-	})
-
-	templates = pool
-
-	return nil
 }
