@@ -12,9 +12,11 @@ type Chain struct {
 }
 
 // Filter ...
-type Filter interface {
-	http.Handler
-	Next(next http.Handler) http.Handler
+// Remember "Last added, First called"
+type Filter struct {
+	// http.Handler
+	// Next(next http.Handler) http.Handler
+	Next http.Handler
 }
 
 // NewFilter ...
