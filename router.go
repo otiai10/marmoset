@@ -147,6 +147,7 @@ func (router *Router) Static(p, dir string) *Router {
 
 // StaticRelative ...
 func (router *Router) StaticRelative(p string, relativeDir string) *Router {
+	// TODO: is this needed?? ;)
 	_, f, _, _ := runtime.Caller(1)
 	return router.Static(p, path.Join(path.Dir(f), relativeDir))
 }
