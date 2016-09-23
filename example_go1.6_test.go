@@ -1,14 +1,15 @@
-// +build !appengine
+// +build appengine
 
 package marmoset
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+
+	"golang.org/x/net/context"
 )
 
 type User struct {

@@ -1,11 +1,12 @@
-// +build !appengine
+// +build appengine
 
 package marmoset
 
 import (
-	"context"
 	"net/http"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 // RequestContextMap ...
