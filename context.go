@@ -15,7 +15,7 @@ type RequestContextMap struct {
 }
 
 // Set ...
-func (rctxmap *RequestContextMap) Set(req *http.Request, ctx context.Context) {
+func (rctxmap *RequestContextMap) Set(ctx context.Context, req *http.Request) {
 	// TODO: Avoid duplicated call of this `if`
 	if rctxmap.contextmap == nil {
 		rctxmap.contextmap = map[*http.Request]context.Context{}

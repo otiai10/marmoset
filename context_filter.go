@@ -26,7 +26,7 @@ type ContextFilter struct {
 }
 
 func (f *ContextFilter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	shared.Set(r, r.Context())
+	shared.Set(r.Context(), r)
 	defer shared.Flush(r)
 	f.Next.ServeHTTP(w, r)
 }

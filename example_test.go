@@ -29,7 +29,7 @@ func (f *UserFilter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
 		return
 	}
-	Context().Set(r, context.WithValue(ctx, "user", User{id}))
+	Context().Set(context.WithValue(ctx, "user", User{id}), r)
 	f.Next.ServeHTTP(w, r)
 }
 
