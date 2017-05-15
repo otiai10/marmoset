@@ -1,11 +1,12 @@
-// +build !appengine
+// +build appengine
 
 package marmoset
 
 import (
-	"context"
 	"net/http"
 	"sync"
+
+	"golang.org/x/net/context"
 )
 
 var shared = &RequestContextMap{
@@ -26,7 +27,8 @@ type ContextFilter struct {
 }
 
 func (f *ContextFilter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	shared.Set(r, r.Context())
+	// shared.Set(r, r.Context())
+	shared.Set(r, context.Background())
 	defer shared.Flush(r)
 	f.Next.ServeHTTP(w, r)
 }
