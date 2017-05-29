@@ -50,6 +50,19 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // findHandler ...
 func (router *Router) findHandler(req *http.Request) http.HandlerFunc {
+
+	// {{{ TODO: Refactor
+	if routing, ok := router.routes["__ANY__"]; ok {
+		top := "/" + strings.Split(req.URL.Path, "/")[1]
+		if handler, ok := routing[top]; ok {
+			return func(w http.ResponseWriter, r *http.Request) {
+				r.URL.Path = strings.Replace(r.URL.Path, top, "", -1)
+				handler(w, r)
+			}
+		}
+	}
+	// }}}
+
 	if methods, ok := router.routes[req.Method]; ok {
 		if handler, ok := methods[req.URL.Path]; ok {
 			return handler
@@ -126,6 +139,11 @@ func (router *Router) GET(path string, handler http.HandlerFunc) *Router {
 // POST ...
 func (router *Router) POST(path string, handler http.HandlerFunc) *Router {
 	return router.add("POST", path, handler)
+}
+
+// Handle ...
+func (router *Router) Handle(path string, handler http.HandlerFunc) *Router {
+	return router.add("__ANY__", path, handler)
 }
 
 // NotFound ...
