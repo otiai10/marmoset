@@ -50,8 +50,8 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 // findHandler ...
 func (router *Router) findHandler(req *http.Request) http.HandlerFunc {
-	if methodes, ok := router.routes[req.Method]; ok {
-		if handler, ok := methodes[req.URL.Path]; ok {
+	if methods, ok := router.routes[req.Method]; ok {
+		if handler, ok := methods[req.URL.Path]; ok {
 			return handler
 		}
 	}
