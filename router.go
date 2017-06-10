@@ -16,7 +16,9 @@ func NewRouter() *Router {
 	return &Router{
 		routes:   map[string]map[string]http.HandlerFunc{},
 		regexps:  map[string]map[*regexp.Regexp]http.HandlerFunc{},
+		children: []*Router{},
 		notfound: http.NotFound,
+		proxied:  nil,
 	}
 }
 
@@ -25,7 +27,12 @@ type Router struct {
 	static   *static
 	routes   map[string]map[string]http.HandlerFunc
 	regexps  map[string]map[*regexp.Regexp]http.HandlerFunc
+	children []*Router
 	notfound http.HandlerFunc
+	// proxied is completely private.
+	// this is used only by Filter Chain.Router()
+	// to create filtered Router.
+	proxied http.Handler
 }
 
 type static struct {
@@ -39,7 +46,7 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	handler := router.findHandler(req)
+	handler := router.FindHandler(req)
 	if handler == nil {
 		router.notfound(w, req)
 		return
@@ -48,8 +55,18 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	handler.ServeHTTP(w, req)
 }
 
-// findHandler ...
-func (router *Router) findHandler(req *http.Request) http.HandlerFunc {
+// FindHandler ...
+func (router *Router) FindHandler(req *http.Request) http.HandlerFunc {
+
+	if router.proxied != nil {
+		return router.proxied.ServeHTTP
+	}
+
+	for _, child := range router.children {
+		if f := child.FindHandler(req); f != nil {
+			return f
+		}
+	}
 
 	// {{{ TODO: Refactor
 	if routing, ok := router.routes["__ANY__"]; ok {
@@ -57,6 +74,9 @@ func (router *Router) findHandler(req *http.Request) http.HandlerFunc {
 		if handler, ok := routing[top]; ok {
 			return func(w http.ResponseWriter, r *http.Request) {
 				r.URL.Path = strings.Replace(r.URL.Path, top, "", -1)
+				if r.URL.Path == "" {
+					r.URL.Path = "/"
+				}
 				handler(w, r)
 			}
 		}
@@ -144,6 +164,12 @@ func (router *Router) POST(path string, handler http.HandlerFunc) *Router {
 // Handle ...
 func (router *Router) Handle(path string, handler http.HandlerFunc) *Router {
 	return router.add("__ANY__", path, handler)
+}
+
+// Subrouter ...
+func (router *Router) Subrouter(child *Router) *Router {
+	router.children = append(router.children, child)
+	return router
 }
 
 // NotFound ...

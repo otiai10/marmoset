@@ -47,7 +47,7 @@ func ExampleFilter() {
 	// Add Filters.
 	// If you want to use `Context`, `ContextFilter` must be added for the last.
 	// Remember "Last added, First called"
-	filtered := NewFilter(router).Add(&UserFilter{}).Add(&ContextFilter{}).Server()
+	filtered := NewFilter(router).Add(&UserFilter{}).Add(&ContextFilter{}).Router()
 
 	// Use `http.ListenAndServe` in real case, instead of httptest.
 	ts := httptest.NewServer(filtered)

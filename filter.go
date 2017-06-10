@@ -45,7 +45,10 @@ func (chain *Chain) Add(filter http.Handler) *Chain {
 	return chain
 }
 
-// Server ...
-func (chain *Chain) Server() http.Handler {
-	return chain.current
+// Router ...
+func (chain *Chain) Router() *Router {
+	router := &Router{
+		proxied: chain.current,
+	}
+	return router
 }
