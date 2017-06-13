@@ -14,25 +14,38 @@ import (
 // NewRouter ...
 func NewRouter() *Router {
 	return &Router{
-		routes:   map[string]map[string]http.HandlerFunc{},
-		regexps:  map[string]map[*regexp.Regexp]http.HandlerFunc{},
-		children: []*Router{},
-		notfound: http.NotFound,
-		proxied:  nil,
+		routes:     map[HTTPMethod]map[string]http.HandlerFunc{},
+		regexps:    map[HTTPMethod]map[*regexp.Regexp]http.HandlerFunc{},
+		subrouters: []*Router{},
 	}
+}
+
+// HTTPMethod ...
+type HTTPMethod string
+
+const (
+	// MethodGet ...
+	MethodGet HTTPMethod = http.MethodGet
+	// MethodPost ...
+	MethodPost HTTPMethod = http.MethodPost
+	// MethodAny represents any method type
+	MethodAny HTTPMethod = "*"
+)
+
+// Resolver only resolves
+type Resolver interface {
+	FindHandler(*http.Request) (http.HandlerFunc, bool)
 }
 
 // Router ...
 type Router struct {
-	static   *static
-	routes   map[string]map[string]http.HandlerFunc
-	regexps  map[string]map[*regexp.Regexp]http.HandlerFunc
-	children []*Router
-	notfound http.HandlerFunc
-	// proxied is completely private.
-	// this is used only by Filter Chain.Router()
-	// to create filtered Router.
-	proxied http.Handler
+	static     *static
+	routes     map[HTTPMethod]map[string]http.HandlerFunc
+	regexps    map[HTTPMethod]map[*regexp.Regexp]http.HandlerFunc
+	subrouters []*Router
+	subrouter  *Router
+	resolver   Resolver
+	filters    []Filterable
 }
 
 type static struct {
@@ -41,55 +54,58 @@ type static struct {
 }
 
 func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+
 	if router.static != nil && strings.HasPrefix(req.URL.Path, router.static.Path) {
 		router.static.Server.ServeHTTP(w, req)
 		return
 	}
 
-	handler := router.FindHandler(req)
-	if handler == nil {
-		router.notfound(w, req)
+	handlerFunc, ok := router.FindHandler(req)
+	if ok && handlerFunc != nil {
+		router.handleFilteredFunc(handlerFunc, w, req)
 		return
 	}
 
-	handler.ServeHTTP(w, req)
+	http.NotFound(w, req)
 }
 
 // FindHandler ...
-func (router *Router) FindHandler(req *http.Request) http.HandlerFunc {
+func (router *Router) FindHandler(req *http.Request) (http.HandlerFunc, bool) {
 
-	if router.proxied != nil {
-		return router.proxied.ServeHTTP
-	}
-
-	for _, child := range router.children {
-		if f := child.FindHandler(req); f != nil {
-			return f
+	// Ask child first
+	for _, child := range router.subrouters {
+		handler, ok := child.FindHandler(req)
+		if ok && handler != nil {
+			return func(w http.ResponseWriter, req *http.Request) {
+				child.handleFilteredFunc(handler, w, req)
+			}, ok
 		}
 	}
 
-	// {{{ TODO: Refactor
-	if routing, ok := router.routes["__ANY__"]; ok {
-		top := "/" + strings.Split(req.URL.Path, "/")[1]
-		if handler, ok := routing[top]; ok {
-			return func(w http.ResponseWriter, r *http.Request) {
-				r.URL.Path = strings.Replace(r.URL.Path, top, "", -1)
-				if r.URL.Path == "" {
-					r.URL.Path = "/"
+	// Ask subroute
+	if handlers, ok := router.routes[MethodAny]; ok {
+		for key, handler := range handlers {
+			if strings.HasPrefix(req.URL.Path, key) {
+				// Match!!
+				rest := strings.Replace(req.URL.Path, key, "", -1)
+				if !strings.HasPrefix(rest, "/") {
+					rest = "/" + rest
 				}
-				handler(w, r)
+				return handler, true
 			}
 		}
 	}
-	// }}}
 
-	if methods, ok := router.routes[req.Method]; ok {
-		if handler, ok := methods[req.URL.Path]; ok {
-			return handler
+	// Ask normal routes
+	if handlers, ok := router.routes[HTTPMethod(req.Method)]; ok {
+		if handler, ok := handlers[req.URL.Path]; ok {
+			return handler, true
 		}
 	}
-	if methods, ok := router.regexps[req.Method]; ok {
-		for exp, handler := range methods {
+
+	// Ask regex routes
+	if handlers, ok := router.regexps[HTTPMethod(req.Method)]; ok {
+		for exp, handler := range handlers {
 			if exp.MatchString(req.URL.Path) {
 				matched := exp.FindAllStringSubmatch(req.URL.Path, -1)
 				if req.Form == nil {
@@ -98,15 +114,15 @@ func (router *Router) FindHandler(req *http.Request) http.HandlerFunc {
 				for i, name := range exp.SubexpNames() {
 					req.Form.Add(name, matched[0][i])
 				}
-				return handler
+				return handler, true
 			}
 		}
 	}
-	return nil
+	return nil, false
 }
 
 // add ...
-func (router *Router) add(method string, path string, handler http.HandlerFunc) *Router {
+func (router *Router) add(method HTTPMethod, path string, handler http.HandlerFunc) *Router {
 	if ok, compiled := isRegexpPath(path); ok {
 		return router.addRegexpRoute(method, path, compiled, handler)
 	}
@@ -143,7 +159,7 @@ func isRegexpPath(path string) (bool, *regexp.Regexp) {
 }
 
 // addRegexpRoute ...
-func (router *Router) addRegexpRoute(method, path string, pathCompiled *regexp.Regexp, handler http.HandlerFunc) *Router {
+func (router *Router) addRegexpRoute(method HTTPMethod, path string, pathCompiled *regexp.Regexp, handler http.HandlerFunc) *Router {
 	if _, ok := router.regexps[method]; !ok {
 		router.regexps[method] = map[*regexp.Regexp]http.HandlerFunc{}
 	}
@@ -162,19 +178,13 @@ func (router *Router) POST(path string, handler http.HandlerFunc) *Router {
 }
 
 // Handle ...
-func (router *Router) Handle(path string, handler http.HandlerFunc) *Router {
-	return router.add("__ANY__", path, handler)
+func (router *Router) Handle(path string, handler http.Handler) *Router {
+	return router.add("*", path, handler.ServeHTTP)
 }
 
 // Subrouter ...
 func (router *Router) Subrouter(child *Router) *Router {
-	router.children = append(router.children, child)
-	return router
-}
-
-// NotFound ...
-func (router *Router) NotFound(handler http.HandlerFunc) *Router {
-	router.notfound = handler
+	router.subrouters = append(router.subrouters, child)
 	return router
 }
 
@@ -194,4 +204,33 @@ func (router *Router) StaticRelative(p string, relativeDir string) *Router {
 	// TODO: is this needed?? ;)
 	_, f, _, _ := runtime.Caller(1)
 	return router.Static(p, path.Join(path.Dir(f), relativeDir))
+}
+
+// Apply applies Filters
+func (router *Router) Apply(filters ...Filterable) error {
+	router.filters = filters
+	return nil
+}
+
+func (router *Router) handleFilteredFunc(fn http.HandlerFunc, w http.ResponseWriter, req *http.Request) {
+	if len(router.filters) == 0 {
+		fn(w, req)
+		return
+	}
+	// TODO: Fix
+	// filters := []Filterable{}
+	// copy(filters, router.filters)
+	handler := http.HandlerFunc(fn)
+	router.filters[len(router.filters)-1].SetNext(handler)
+	chained := chainFilters(router.filters)
+	chained.ServeHTTP(w, req)
+	return
+}
+
+func chainFilters(filters []Filterable) Filterable {
+	if len(filters) == 1 {
+		return filters[0]
+	}
+	filters[len(filters)-2].SetNext(filters[len(filters)-1])
+	return chainFilters(filters[:len(filters)-1])
 }

@@ -1,54 +1,59 @@
 package marmoset
 
-import (
-	"log"
-	"net/http"
-	"reflect"
-)
+import "net/http"
 
-// Chain ..
-type Chain struct {
-	current http.Handler
+// Filterable represents struct which can be a filter
+type Filterable interface {
+	ServeHTTP(http.ResponseWriter, *http.Request)
+	SetNext(http.Handler)
 }
 
 // Filter ...
 // Remember "Last added, First called"
 type Filter struct {
-	// http.Handler
-	// Next(next http.Handler) http.Handler
+	http.Handler
 	Next http.Handler
 }
 
-// NewFilter ...
-func NewFilter(root http.Handler) *Chain {
-	return &Chain{
-		current: root,
-	}
+// SetNext ...
+func (f *Filter) SetNext(next http.Handler) {
+	f.Next = next
 }
+
+// NewFilter ...
+// func NewFilter(root *Router) *FilteredChain {
+// 	return &FilteredChain{
+// 		root:    root,
+// 		current: root,
+// 	}
+// }
 
 // Add ...
-func (chain *Chain) Add(filter http.Handler) *Chain {
-	v := reflect.ValueOf(filter)
-	switch v.Kind() {
-	case reflect.Interface, reflect.Ptr:
-		// pass
-	default:
-		log.Fatalf("type `%s` is not addressable", v.Type().String())
-		// return chain
-	}
-	if !v.Elem().FieldByName("Next").CanSet() {
-		log.Fatalf("type `%s` must have `Next` field", v.Type().String())
-		// return chain
-	}
-	v.Elem().FieldByName("Next").Set(reflect.ValueOf(chain.current))
-	chain.current = filter
-	return chain
-}
-
-// Router ...
-func (chain *Chain) Router() *Router {
-	router := &Router{
-		proxied: chain.current,
-	}
-	return router
-}
+// func (chain *FilteredChain) Add(filter http.Handler) *FilteredChain {
+// 	v := reflect.ValueOf(filter)
+// 	switch v.Kind() {
+// 	case reflect.Interface, reflect.Ptr:
+// 		// pass
+// 	default:
+// 		log.Fatalf("type `%s` is not addressable", v.Type().String())
+// 		// return chain
+// 	}
+// 	if !v.Elem().FieldByName("Next").CanSet() {
+// 		log.Fatalf("type `%s` must have `Next` field", v.Type().String())
+// 		// return chain
+// 	}
+// 	v.Elem().FieldByName("Next").Set(reflect.ValueOf(chain.current))
+// 	chain.current = filter
+// 	return chain
+// }
+//
+// // Router ...
+// func (chain *FilteredChain) Router() *Router {
+// 	child := NewRouter()
+// 	child.Handle("/", chain.current)
+// 	router := &Router{
+// 		resolver:   chain.root,
+// 		subrouters: []*Router{child},
+// 	}
+// 	return router
+// }

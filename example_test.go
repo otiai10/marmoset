@@ -8,33 +8,41 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
+	"strings"
 )
 
 type User struct {
-	ID int `json:"id"`
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
-// UserFilter can detect request header and define current request user.
+// AuthFilter can detect request header and define current request user.
 // For example, you can restore User model from auth-token in request header.
-type UserFilter struct {
+type AuthFilter struct {
 	Filter
 }
 
 // ServeHTTP will be called before the root router's ServeHTTP.
-func (f *UserFilter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx := Context().Get(r)
-	id, err := strconv.Atoi(r.Header.Get("X-User-ID"))
+func (f *AuthFilter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	user := new(User)
+	err := json.NewDecoder(strings.NewReader(req.Header.Get("X-User"))).Decode(user)
 	if err != nil {
-		w.WriteHeader(400)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
-	Context().Set(r, context.WithValue(ctx, "user", User{id}))
-	f.Next.ServeHTTP(w, r)
+	if user.ID == 20 {
+		w.WriteHeader(http.StatusForbidden)
+		return
+	}
+
+	ctx := Context().Get(req)
+	Context().Set(req, context.WithValue(ctx, "user", user))
+
+	f.Next.ServeHTTP(w, req)
 }
 
 var SampleController = func(w http.ResponseWriter, r *http.Request) {
-	user := Context().Get(r).Value("user").(User)
+	user := Context().Get(r).Value("user").(*User)
 	json.NewEncoder(w).Encode(map[string]interface{}{"request_user": user})
 }
 
@@ -47,22 +55,22 @@ func ExampleFilter() {
 	// Add Filters.
 	// If you want to use `Context`, `ContextFilter` must be added for the last.
 	// Remember "Last added, First called"
-	filtered := NewFilter(router).Add(&UserFilter{}).Add(&ContextFilter{}).Router()
+	router.Apply(new(AuthFilter))
 
 	// Use `http.ListenAndServe` in real case, instead of httptest.
-	ts := httptest.NewServer(filtered)
+	server := httptest.NewServer(router)
 
-	req, _ := http.NewRequest("GET", ts.URL+"/test", nil)
-	req.Header.Add("X-User-ID", "1001")
+	req, _ := http.NewRequest("GET", server.URL+"/test", nil)
+	req.Header.Add("X-User", `{"id":10,"name":"otiai10"}`)
 	res, _ := http.DefaultClient.Do(req)
 	fmt.Println("StatusCode:", res.StatusCode)
 
-	req, _ = http.NewRequest("GET", ts.URL+"/test", nil)
-	req.Header.Add("X-User-ID", "xxxxxxxx")
+	req, _ = http.NewRequest("GET", server.URL+"/test", nil)
+	req.Header.Add("X-User", `{"id":20,"name":"otiai20"}`)
 	res, _ = http.DefaultClient.Do(req)
 	fmt.Println("StatusCode:", res.StatusCode)
 
 	// Output:
 	// StatusCode: 200
-	// StatusCode: 400
+	// StatusCode: 403
 }
