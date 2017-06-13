@@ -218,6 +218,7 @@ func (router *Router) handleFilteredFunc(fn http.HandlerFunc, w http.ResponseWri
 		return
 	}
 	// TODO: Fix
+	// TODO: This if fuxxxn' buggy to indirect function to single refrence for slice
 	// filters := []Filterable{}
 	// copy(filters, router.filters)
 	handler := http.HandlerFunc(fn)
