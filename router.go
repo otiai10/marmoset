@@ -32,6 +32,8 @@ const (
 	MethodAny HTTPMethod = "*"
 )
 
+const pathParameterExpressionString = "\\(\\?P\\<[^>]+\\>[^)]+\\)"
+
 // Resolver only resolves
 type Resolver interface {
 	FindHandler(*http.Request) (http.HandlerFunc, bool)
@@ -142,7 +144,7 @@ func isRegexpPath(path string) (bool, *regexp.Regexp) {
 	if err != nil || compiled == nil {
 		return false, nil
 	}
-	pathParameterExpression := regexp.MustCompile("\\(\\?P\\<[^>]+\\>[^)]+\\)")
+	pathParameterExpression := regexp.MustCompile(pathParameterExpressionString)
 
 	all := strings.Split(path, "/")
 	for i, part := range all {

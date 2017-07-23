@@ -74,3 +74,25 @@ func ExampleFilter() {
 	// StatusCode: 200
 	// StatusCode: 403
 }
+
+func ExampleRouter_withPathParams() {
+	router := NewRouter()
+	var userID, filename string
+	router.GET("/users/(?P<user_id>[a-zA-Z0-9]+)", func(w http.ResponseWriter, r *http.Request) {
+		userID = r.FormValue("user_id")
+		w.WriteHeader(http.StatusOK)
+	})
+	router.GET("/uploads/(?P<filename>.+)", func(w http.ResponseWriter, r *http.Request) {
+		filename = r.FormValue("filename")
+		w.WriteHeader(http.StatusOK)
+	})
+	server := httptest.NewServer(router)
+	http.Get(server.URL + "/users/otiai10")
+	http.Get(server.URL + "/uploads/some_image.png")
+	fmt.Println("USER ID:", userID)
+	fmt.Println("FILENAME:", filename)
+
+	// Output:
+	// USER ID: otiai10
+	// FILENAME: some_image.png
+}
