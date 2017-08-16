@@ -18,10 +18,16 @@ type P map[string]interface{}
 
 // LoadViews ...
 func LoadViews(p string) *template.Template {
-	_, f, _, _ := runtime.Caller(1)
-	viewpath := path.Join(path.Dir(f), p) + "/"
-	exp := regexp.MustCompile("[^/]+\\.html$")
 
+	var viewpath string
+	if filepath.IsAbs(p) {
+		viewpath = p
+	} else {
+		_, f, _, _ := runtime.Caller(1)
+		viewpath = path.Join(path.Dir(f), p) + "/"
+	}
+
+	exp := regexp.MustCompile("[^/]+\\.html$")
 	pool := template.New("")
 
 	filepath.Walk(viewpath, func(fullpath string, info os.FileInfo, err error) error {

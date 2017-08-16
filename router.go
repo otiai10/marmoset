@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
@@ -192,8 +193,13 @@ func (router *Router) Subrouter(child *Router) *Router {
 
 // Static ...
 func (router *Router) Static(p, dir string) *Router {
-	_, f, _, _ := runtime.Caller(1)
-	fs := http.FileServer(http.Dir(path.Join(path.Dir(f), dir)))
+
+	if !filepath.IsAbs(dir) {
+		_, f, _, _ := runtime.Caller(1)
+		dir = path.Join(path.Dir(f), dir)
+	}
+
+	fs := http.FileServer(http.Dir(dir))
 	router.static = &static{
 		Path:   p,
 		Server: http.StripPrefix(p, fs),
