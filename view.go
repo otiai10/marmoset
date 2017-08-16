@@ -33,6 +33,7 @@ func LoadViews(p string) *template.Template {
 	filepath.Walk(viewpath, func(fullpath string, info os.FileInfo, err error) error {
 		if exp.MatchString(fullpath) {
 			name := strings.Replace(strings.Replace(fullpath, viewpath, "", -1), filepath.Ext(fullpath), "", -1)
+			name = strings.Trim(name, "/")
 			tmp, err := template.ParseFiles(fullpath)
 			if err != nil {
 				panic(err)
