@@ -12,6 +12,8 @@ import (
 
 var templates *template.Template
 
+const separator = string(filepath.Separator)
+
 // P is just a short hand of `map[string]interface{}`
 // I don't want to write `map[string]interface{}` so repeatedly... :(
 type P map[string]interface{}
@@ -24,7 +26,7 @@ func LoadViews(p string) *template.Template {
 		viewpath = p
 	} else {
 		_, f, _, _ := runtime.Caller(1)
-		viewpath = path.Join(path.Dir(f), p) + "/"
+		viewpath = path.Join(path.Dir(f), p) + separator
 	}
 
 	exp := regexp.MustCompile("[^/]+\\.html$")
@@ -33,7 +35,7 @@ func LoadViews(p string) *template.Template {
 	filepath.Walk(viewpath, func(fullpath string, info os.FileInfo, err error) error {
 		if exp.MatchString(fullpath) {
 			name := strings.Replace(strings.Replace(fullpath, viewpath, "", -1), filepath.Ext(fullpath), "", -1)
-			name = strings.Trim(name, "/")
+			name = strings.Trim(name, separator)
 			tmp, err := template.ParseFiles(fullpath)
 			if err != nil {
 				panic(err)
