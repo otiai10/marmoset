@@ -1,7 +1,9 @@
 marmoset
 ========
 
-[![Build Status](https://travis-ci.org/otiai10/marmoset.svg?branch=master)](https://travis-ci.org/otiai10/marmoset) [![GoDoc](https://godoc.org/github.com/otiai10/marmoset?status.svg)](https://godoc.org/github.com/otiai10/marmoset)
+[![Build Status](https://travis-ci.org/otiai10/marmoset.svg?branch=master)](https://travis-ci.org/otiai10/marmoset)
+[![codecov](https://codecov.io/gh/otiai10/marmoset/branch/master/graph/badge.svg)](https://codecov.io/gh/otiai10/marmoset)
+[![GoDoc](https://godoc.org/github.com/otiai10/marmoset?status.svg)](https://godoc.org/github.com/otiai10/marmoset)
 
 less than "web framework", just make your code a bit DRY.
 

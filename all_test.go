@@ -190,3 +190,33 @@ func TestRouter_Apply(t *testing.T) {
 	Expect(t, res.StatusCode).ToBe(http.StatusOK)
 
 }
+
+func TestLoadViews(t *testing.T) {
+
+	r := NewRouter()
+	LoadViews("./testdata/views")
+	r.GET("/foo", func(w http.ResponseWriter, req *http.Request) {
+		Render(w).JSON(http.StatusOK, P{"msg": "hello"})
+	})
+	r.GET("/baa", func(w http.ResponseWriter, req *http.Request) {
+		Render(w).HTML("index", P{"name": req.FormValue("name")})
+	})
+	s := httptest.NewServer(r)
+
+	res, err := http.Get(s.URL + "/foo")
+	Expect(t, err).ToBe(nil)
+	Expect(t, res.Header.Get("Content-Type")).ToBe("application/json")
+
+	res, err = http.Get(s.URL + "/baa")
+	Expect(t, err).ToBe(nil)
+	Expect(t, res.Header.Get("Content-Type")).ToBe("text/html")
+	buf, err := ioutil.ReadAll(res.Body)
+	Expect(t, err).ToBe(nil)
+	Expect(t, string(buf)).ToBe("<h1>Hello, World!</h1>")
+
+	res, err = http.Get(s.URL + "/baa?name=otiai20")
+	Expect(t, err).ToBe(nil)
+	buf, err = ioutil.ReadAll(res.Body)
+	Expect(t, err).ToBe(nil)
+	Expect(t, string(buf)).ToBe("<h1>Hello, otiai20!</h1>")
+}
