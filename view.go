@@ -49,3 +49,7 @@ func LoadViews(p string) *template.Template {
 
 	return templates
 }
+
+func UseTemplate(tpl *template.Template) {
+	templates = tpl
+}
