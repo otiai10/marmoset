@@ -29,7 +29,10 @@ func (rctxmap *RequestContextMap) Set(req *http.Request, ctx context.Context) {
 func (rctxmap *RequestContextMap) Get(req *http.Request) context.Context {
 	rctxmap.locker.Lock()
 	defer rctxmap.locker.Unlock()
-	return rctxmap.contextmap[req]
+	if ctx, ok := rctxmap.contextmap[req]; ok {
+		return ctx
+	}
+	return req.Context()
 }
 
 // Flush ...

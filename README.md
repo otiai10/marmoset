@@ -1,7 +1,11 @@
 marmoset
 ========
 
-[![Build Status](https://travis-ci.org/otiai10/marmoset.svg?branch=master)](https://travis-ci.org/otiai10/marmoset) [![GoDoc](https://godoc.org/github.com/otiai10/marmoset?status.svg)](https://godoc.org/github.com/otiai10/marmoset)
+[![Go](https://github.com/otiai10/marmoset/actions/workflows/go.yml/badge.svg)](https://github.com/otiai10/marmoset/actions/workflows/go.yml)
+[![codecov](https://codecov.io/gh/otiai10/marmoset/branch/master/graph/badge.svg?token=jQrl6xAFNa)](https://codecov.io/gh/otiai10/marmoset)
+[![Go Report Card](https://goreportcard.com/badge/github.com/otiai10/marmoset)](https://goreportcard.com/report/github.com/otiai10/marmoset)
+[![Maintainability](https://api.codeclimate.com/v1/badges/ba1ab060a31d7ff00c8a/maintainability)](https://codeclimate.com/github/otiai10/marmoset/maintainability)
+[![GoDoc](https://godoc.org/github.com/otiai10/marmoset?status.svg)](https://godoc.org/github.com/otiai10/marmoset)
 
 less than "web framework", just make your code a bit DRY.
 
