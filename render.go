@@ -26,8 +26,8 @@ func Render(w http.ResponseWriter, pretty ...bool) Renderer {
 // JSON ...
 func (r Renderer) JSON(status int, data interface{}) error {
 
-	r.writer.WriteHeader(status)
 	r.writer.Header().Set("Content-Type", "application/json")
+	r.writer.WriteHeader(status)
 
 	enc := json.NewEncoder(r.writer)
 	if r.Pretty {
