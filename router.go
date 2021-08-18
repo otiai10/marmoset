@@ -49,6 +49,8 @@ type Router struct {
 	subrouter  *Router
 	resolver   Resolver
 	filters    []Filterable
+
+	notfound http.HandlerFunc
 }
 
 type static struct {
@@ -69,7 +71,11 @@ func (router *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.NotFound(w, req)
+	if router.notfound != nil {
+		router.notfound(w, req)
+	} else {
+		http.NotFound(w, req)
+	}
 }
 
 // FindHandler ...
@@ -242,4 +248,8 @@ func chainFilters(filters []Filterable) Filterable {
 	}
 	filters[len(filters)-2].SetNext(filters[len(filters)-1])
 	return chainFilters(filters[:len(filters)-1])
+}
+
+func (router *Router) NotFound(fun http.HandlerFunc) {
+	router.notfound = fun
 }
