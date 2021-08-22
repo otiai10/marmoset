@@ -3,10 +3,8 @@ package marmoset
 import (
 	"html/template"
 	"os"
-	"path"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 )
 
@@ -19,13 +17,14 @@ type P map[string]interface{}
 // LoadViews ...
 func LoadViews(p string) *template.Template {
 
-	var viewpath string
-	if filepath.IsAbs(p) {
-		viewpath = p
-	} else {
-		_, f, _, _ := runtime.Caller(1)
-		viewpath = path.Join(path.Dir(f), p) + "/"
-	}
+	// var viewpath string
+	// if filepath.IsAbs(p) {
+	// 	viewpath = p
+	// } else {
+	// 	_, f, _, _ := runtime.Caller(1)
+	// 	viewpath = path.Join(path.Dir(f), p) + "/"
+	// }
+	viewpath := p
 
 	exp := regexp.MustCompile("[^/]+\\.html$")
 	pool := template.New("")
