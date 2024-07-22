@@ -39,10 +39,9 @@ jobs:
       with:
         go-version: 1.22
     - name: Coverage
-      run: go test -v -cover -race -coverprofile=coverage -covermode=atomic --tags=go${{ matrix.go }}
+      run: go test -v -cover -race -coverprofile=coverage -covermode=atomic --tags=go1.22
     - name: Upload coverage
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage
         token: ${{ secrets.CODECOV_TOKEN }}
-        verbose: true
